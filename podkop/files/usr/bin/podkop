@@ -2068,8 +2068,16 @@ check_ipt_rules() {
         fi
     fi
 
-    # Check for other mark rules outside podkop chains
-    if $IPT -t mangle -L -n 2>/dev/null | grep -vE "$IPT_CHAIN_MANGLE|$IPT_CHAIN_OUTPUT|$IPT_CHAIN_PROXY" | grep -q "MARK set"; then
+    # Check for other MARK rules outside podkop chains
+    # Use iptables-save: lines are "-A CHAIN_NAME ...", easy to filter by exact chain name
+    local other_marks
+    other_marks=$(iptables-legacy-save -t mangle 2>/dev/null | \
+        grep "^-A " | \
+        grep -v "^-A ${IPT_CHAIN_MANGLE} " | \
+        grep -v "^-A ${IPT_CHAIN_OUTPUT} " | \
+        grep -v "^-A ${IPT_CHAIN_PROXY} " | \
+        grep -E -- "-j MARK|--set-xmark|--set-mark" || true)
+    if [ -n "$other_marks" ]; then
         rules_other_mark_exist=1
     fi
 

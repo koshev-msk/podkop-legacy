@@ -603,7 +603,7 @@ var Podkop;
   ((AvailableMethods2) => {
     AvailableMethods2["CHECK_DNS_AVAILABLE"] = "check_dns_available";
     AvailableMethods2["CHECK_FAKEIP"] = "check_fakeip";
-    AvailableMethods2["CHECK_NFT_RULES"] = "check_nft_rules";
+    AvailableMethods2["CHECK_NFT_RULES"] = "check_ipt_rules";
     AvailableMethods2["GET_STATUS"] = "get_status";
     AvailableMethods2["CHECK_SING_BOX"] = "check_sing_box";
     AvailableMethods2["GET_SING_BOX_STATUS"] = "get_sing_box_status";
@@ -1120,7 +1120,7 @@ var DIAGNOSTICS_CHECKS_MAP = {
   },
   ["NFT" /* NFT */]: {
     order: 3,
-    title: getCheckTitle("Nftables"),
+    title: getCheckTitle("Iptables"),
     code: "NFT" /* NFT */
   },
   ["OUTBOUNDS" /* OUTBOUNDS */]: {

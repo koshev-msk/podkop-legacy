@@ -2170,8 +2170,51 @@ check_sing_box() {
     echo "{\"sing_box_installed\":$sing_box_installed,\"sing_box_version_ok\":$sing_box_version_ok,\"sing_box_service_exist\":$sing_box_service_exist,\"sing_box_autostart_disabled\":$sing_box_autostart_disabled,\"sing_box_process_running\":$sing_box_process_running,\"sing_box_ports_listening\":$sing_box_ports_listening}" | jq .
 }
 
+# Check if IP address belongs to CIDR subnet
+# Arguments: $1 = IP, $2 = CIDR (e.g. 198.18.0.0/15)
+is_ip_in_cidr() {
+    local ip="$1"
+    local cidr="$2"
+    local net="${cidr%/*}"
+    local bits="${cidr#*/}"
+    local a b c d ip_int net_int mask
+
+    IFS=. read -r a b c d << _IP
+$ip
+_IP
+    ip_int=$(( (a << 24) | (b << 16) | (c << 8) | d ))
+
+    IFS=. read -r a b c d << _NET
+$net
+_NET
+    net_int=$(( (a << 24) | (b << 16) | (c << 8) | d ))
+
+    mask=$(( 0xFFFFFFFF << (32 - bits) & 0xFFFFFFFF ))
+    [ $(( ip_int & mask )) -eq $(( net_int & mask )) ]
+}
+
 check_fakeip() {
-    curl -m 3 -s "https://$FAKEIP_TEST_DOMAIN/check" | jq .
+    # disable external check
+    #curl -m 3 -s "https://$FAKEIP_TEST_DOMAIN/check" | jq .
+
+    local fakeip_range
+    config_get fakeip_range "settings" "fakeip_range"
+    [ -z "$fakeip_range" ] && fakeip_range="$SB_FAKEIP_INET4_RANGE"
+
+    # Resolve FAKEIP_TEST_DOMAIN via sing-box DNS inbound
+    local resolved_ip
+    resolved_ip=$(dig @"$SB_DNS_INBOUND_ADDRESS" -p "$SB_DNS_INBOUND_PORT" \
+        "$FAKEIP_TEST_DOMAIN" A +short +timeout=2 +tries=1 2>/dev/null | head -1)
+
+    local is_fakeip="false"
+    if [ -n "$resolved_ip" ] && is_ipv4 "$resolved_ip"; then
+        if is_ip_in_cidr "$resolved_ip" "$fakeip_range"; then
+            is_fakeip="true"
+        fi
+    fi
+
+    log "check_fakeip: domain=$FAKEIP_TEST_DOMAIN ip=$resolved_ip range=$fakeip_range result=$is_fakeip" "debug"
+    echo "{\"fakeip\": $is_fakeip, \"ip\": \"$resolved_ip\"}"
 }
 
 #######################################

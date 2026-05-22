@@ -1,61 +1,8 @@
-# Вещи, которые вам нужно знать перед установкой
+# Podkop legacy firewall support
+This fork brings back support for the legacy version of iptables (fw3). Do not install the original package together with packages from this fork.
 
-- Это бета-версия, которая находится в активной разработке. Из версии в версию что-то может меняться.
-- При возникновении проблем, нужен технически грамотный фидбэк в чат. Ознакомьтесь с закрепом в топике.
-- При обновлении **обязательно** [сбрасывайте кэш LuCI](https://podkop.net/docs/clear-browser-cache/).
-- Также при обновлении всегда заходите в конфигурацию и проверяйте свои настройки. Конфигурация может измениться.
-- Необходимо минимум 25МБ свободного места на роутере. Роутеры с флешками на 16МБ сразу мимо.
-- При старте программы редактируется конфиг Dnsmasq.
-- Podkop редактирует конфиг sing-box. Обязательно сохраните ваш конфиг sing-box перед установкой, если он вам нужен.
-- Информация здесь может быть устаревшей. Все изменения фиксируются в [телеграм-чате](https://t.me/itdogchat/81758/420321).
-- [Если у вас что-то не работает.](https://podkop.net/docs/diagnostics/)
-- Если у вас установлен Getdomains, [его следует удалить](https://github.com/itdoginfo/domain-routing-openwrt?tab=readme-ov-file#%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82-%D0%B4%D0%BB%D1%8F-%D1%83%D0%B4%D0%B0%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F).
-- Требуется версия OpenWrt 24.10.
-- Dashboard доступен, если вы заходите по http (из-за особенностей clash api). И не будет работать, если вы заходите по https и/или домену.
-
-# Документация
+# Original documentation
 https://podkop.net/
 
-# Установка Podkop
-Полная информация в [документации](https://podkop.net/docs/install/)
-
-Вкратце, достаточно одного скрипта для установки и обновления:
-```
-sh <(wget -O - https://raw.githubusercontent.com/itdoginfo/podkop/refs/heads/main/install.sh)
-```
-
-## Изменения 0.7.0
-Начиная с версии 0.7.0 изменена структура конфига `/etc/config/podkop`. Старые значения несовместимы с новыми. Нужно заново настроить Podkop.
-
-Скрипт установки обнаружит старую версию и предупредит вас об этом. Если вы согласитесь, то он сделает автоматически написанное ниже.
-
-При обновлении вручную нужно:
-
-0. Не ныть в issue и чатик.
-1. Забэкапить старый конфиг:
-```
-mv /etc/config/podkop /etc/config/podkop-070
-```
-2. Стянуть новый дефолтный конфиг:
-```
-wget -O /etc/config/podkop https://raw.githubusercontent.com/itdoginfo/podkop/refs/heads/main/podkop/files/etc/config/podkop
-```
-3. Настроить заново ваш Podkop через Luci или UCI.
-
-# ToDo
-
-> [!IMPORTANT]  
-> PR принимаются только по согласованию с авторами в ТГ-чате. Остальные PR на данный момент не рассматриваются. Не тратьте зря своё время.
-
-## Будущее
-- [ ] [Подписка](https://github.com/itdoginfo/podkop/issues/118). Здесь нужна реализация, чтоб для каждой секции помимо ручного выбора, был выбор фильтрации по тегу. Например, для main выбираем ключевые слова NL, DE, FI. А для extra секции фильтруем по RU. И создаётся outbound c urltest в которых перечислены outbound из фильтров.
-- [ ] Весь трафик в sing-box и маршрутизация полностью на его уровне.
-- [ ] При успешном запуске переходит в фоновый режим и следит за состоянием sing-box. Если вдруг идёт exit 1, выполняется dnsmasq restore и снова следит за состоянием. Вопрос в том, как это искусственно провернуть. Попробовать положить прокси и посмотреть, останется ли работать DNS в этом случае. И здесь, вероятно, можно обойтись триггером в init.d. [Issue](https://github.com/itdoginfo/podkop/issues/111)
-- [ ] Галочка, которая режет доступ к doh серверам.
-- [ ] IPv6. Только после наполнения Wiki.
-
-## Тесты
-- [ ] Unit тесты (BATS)
-- [ ] Интеграционные тесты бекенда (OpenWrt rootfs + BATS)
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/itdoginfo/podkop)
+# Original README.md 
+https://github.com/itdoginfo/podkop/blob/main/README.md

@@ -281,6 +281,17 @@ route_table_rule_mark() {
 # nft_init_interfaces_set removed: iptables uses -i match directly
 
 create_ipt_rules() {
+
+    # custom fakeip range
+    local fakeip_range
+    config_get fakeip_range "settings" "fakeip_range"
+    if [ -z "$fakeip_range" ]; then
+        fakeip_range="$SB_FAKEIP_INET4_RANGE"
+        log "fakeip_range not set, using default: $fakeip_range"
+    fi
+    SB_FAKEIP_INET4_RANGE="$fakeip_range"
+
+
     log "Create localv4 ipset"
     ipt_create_ipv4_set "$IPT_IPSET_LOCALV4"
     for net in 0.0.0.0/8 10.0.0.0/8 127.0.0.0/8 169.254.0.0/16                172.16.0.0/12 192.0.0.0/24 192.0.2.0/24 192.88.99.0/24                192.168.0.0/16 198.51.100.0/24 203.0.113.0/24                224.0.0.0/4 240.0.0.0/4; do
@@ -763,6 +774,14 @@ sing_box_configure_dns() {
     config_get dns_type "settings" "dns_type" "doh"
     config_get dns_server "settings" "dns_server" "1.1.1.1"
     config_get bootstrap_dns_server "settings" "bootstrap_dns_server" "77.88.8.8"
+
+    # Set fakeIP range
+    local fakeip_range
+    config_get fakeip_range "settings" "fakeip_range"
+    if [ -z "$fakeip_range" ]; then
+        fakeip_range="$SB_FAKEIP_INET4_RANGE"
+    fi
+    SB_FAKEIP_INET4_RANGE="$fakeip_range"
 
     dns_server_address="$(url_get_host "$dns_server")"
     if ! is_ipv4 "$dns_server_address"; then

@@ -3930,6 +3930,13 @@ function removeVersionPrefix(version) {
   return version.replace(/^v/, "");
 }
 
+// src/helpers/extractBaseVersion.ts
+function extractBaseVersion(version) {
+  const clean = removeVersionPrefix(version);
+  const match = clean.match(/^(\d+\.\d+\.\d+)/);
+  return match ? match[1] : clean.split(/[-~]/)[0];
+}
+
 // src/podkop/tabs/diagnostic/helpers/getPodkopVersionRow.ts
 function isUnknownVersion(version) {
   return version === "unknown" || version === _("unknown");
@@ -3948,7 +3955,7 @@ function getPodkopVersionRow(diagnosticsSystemInfo) {
       value: version
     };
   }
-  if (removeVersionPrefix(version) !== removeVersionPrefix(diagnosticsSystemInfo.podkop_latest_version)) {
+  if (extractBaseVersion(version) !== extractBaseVersion(diagnosticsSystemInfo.podkop_latest_version)) {
     return {
       key: "Podkop",
       value: version,

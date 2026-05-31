@@ -1,8 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=podkop
+PKG_BASE_VERSION=0.7.17
 
-PKG_VERSION := $(if $(PODKOP_VERSION),$(PODKOP_VERSION),0.$(shell date +%d%m%Y))
+PKG_GIT_BRANCH := $(shell git -C $(dir $(firstword $(MAKEFILE_LIST))) rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+PKG_GIT_COMMIT := $(shell git -C $(dir $(firstword $(MAKEFILE_LIST))) rev-parse --short HEAD 2>/dev/null || echo unknown)
+
+PKG_VERSION := $(if $(PODKOP_VERSION),$(PODKOP_VERSION)-$(PKG_GIT_BRANCH)~$(PKG_GIT_COMMIT),$(PKG_BASE_VERSION)-$(PKG_GIT_BRANCH)~$(PKG_GIT_COMMIT))
+#PKG_VERSION := $(if $(PODKOP_VERSION),$(PODKOP_VERSION),0.$(shell date +%d%m%Y))
 
 PKG_RELEASE:=1
 
@@ -14,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/podkop
 	SECTION:=net
 	CATEGORY:=Network
-	DEPENDS:=+sing-box +curl +jq +kmod-nft-tproxy +coreutils-base64 +bind-dig
+	DEPENDS:=+sing-box +curl +jq +kmod-ipt-tproxy +iptables-mod-tproxy +ipset +kmod-ipt-ipset +coreutils-base64 +bind-dig
 	CONFLICTS:=https-dns-proxy nextdns luci-app-passwall luci-app-passwall2
 	TITLE:=Domain routing app
 	URL:=https://podkop.net

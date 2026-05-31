@@ -408,6 +408,27 @@ function createSettingsContent(section) {
   o.rmempty = false;
 
   o = section.option(
+    form.Value,
+    "fakeip_range",
+    _("FakeIP Range"),
+    _("IPv4 subnet used for FakeIP DNS mapping (default: 198.18.0.0/15)"),
+  );
+  o.default = "198.18.0.0/15";
+  o.placeholder = "198.18.0.0/15";
+  o.rmempty = true;
+  o.validate = function (section_id, value) {
+    if (!value) {
+      return true;
+    }
+    const validation = main.validateSubnet(value);
+    if (validation.valid) {
+      return true;
+    }
+    return validation.message;
+  };
+
+
+  o = section.option(
     form.DynamicList,
     "routing_excluded_ips",
     _("Routing Excluded IPs"),

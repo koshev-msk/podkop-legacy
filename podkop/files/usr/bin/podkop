@@ -319,6 +319,9 @@ create_ipt_rules() {
         $IPT -t mangle -A "$IPT_CHAIN_MANGLE" -i "$iface" -d "$SB_FAKEIP_INET4_RANGE" -p udp -j MARK --set-mark "$IPT_FAKEIP_MARK"
     done
 
+    log "Add DNAT return rule"
+    $IPT -t mangle -I "$IPT_CHAIN_MANGLE" 1 -m conntrack --ctstatus DNAT -j RETURN
+
     log "Create TPROXY rules"
     $IPT -t mangle -A "$IPT_CHAIN_PROXY" -p tcp -m mark --mark "$IPT_FAKEIP_MARK" -j TPROXY --on-port 1602 --on-ip 127.0.0.1
     $IPT -t mangle -A "$IPT_CHAIN_PROXY" -p udp -m mark --mark "$IPT_FAKEIP_MARK" -j TPROXY --on-port 1602 --on-ip 127.0.0.1
@@ -2492,7 +2495,7 @@ global_check() {
     fi
 
     print_global "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    print_global "🧱 NFT rules status"
+    print_global "🧱 fw3 rules status"
 
     local nft_check_json
     nft_check_json=$(check_ipt_rules)
@@ -2680,7 +2683,7 @@ Available commands:
     list_update             Update domain lists
     check_proxy             Check proxy connectivity
     check_ipt               Check iptables rules
-    check_ipt_rules         Check NFT rules status
+    check_ipt_rules         Check iptables rules status
     check_sing_box          Check sing-box installation and status
     check_logs              Show podkop logs from system journal
     check_sing_box_logs     Show sing-box logs

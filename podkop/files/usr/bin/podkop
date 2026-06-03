@@ -320,7 +320,7 @@ create_ipt_rules() {
     done
 
     log "Add DNAT return rule"
-    $IPT -t mangle -I "$IPT_CHAIN_MANGLE" 1 -m conntrack --ctstatus DNAT -j RETURN
+    $IPT -t mangle -I "$IPT_CHAIN_MANGLE" 1 -m conntrack --ctstate DNAT -j RETURN
 
     log "Create TPROXY rules"
     $IPT -t mangle -A "$IPT_CHAIN_PROXY" -p tcp -m mark --mark "$IPT_FAKEIP_MARK" -j TPROXY --on-port 1602 --on-ip 127.0.0.1

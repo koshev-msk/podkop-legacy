@@ -1019,7 +1019,8 @@ configure_community_list_handler() {
 
     config=$(sing_box_cm_add_remote_ruleset "$config" "$ruleset_tag" "$format" "$url" "$detour" "$update_interval")
     config=$(sing_box_cm_patch_route_rule "$config" "$route_rule_tag" "rule_set" "$ruleset_tag")
-    config=$(sing_box_cm_patch_dns_route_rule "$config" "$SB_FAKEIP_DNS_RULE_TAG" "rule_set" "$ruleset_tag")
+    [ "$route_rule_tag" = "$SB_EXCLUSION_RULE_TAG" ] || \
+        config=$(sing_box_cm_patch_dns_route_rule "$config" "$SB_FAKEIP_DNS_RULE_TAG" "rule_set" "$ruleset_tag")
 }
 
 prepare_source_ruleset() {
@@ -1038,7 +1039,8 @@ prepare_source_ruleset() {
         config=$(sing_box_cm_patch_route_rule "$config" "$route_rule_tag" "rule_set" "$ruleset_tag")
         case "$type" in
         domains)
-            config=$(sing_box_cm_patch_dns_route_rule "$config" "$SB_FAKEIP_DNS_RULE_TAG" "rule_set" "$ruleset_tag")
+            [ "$route_rule_tag" = "$SB_EXCLUSION_RULE_TAG" ] || \
+                config=$(sing_box_cm_patch_dns_route_rule "$config" "$SB_FAKEIP_DNS_RULE_TAG" "rule_set" "$ruleset_tag")
             ;;
         subnets) ;;
         *)
@@ -1154,7 +1156,8 @@ configure_remote_domain_or_subnet_list_handler() {
         config=$(sing_box_cm_patch_route_rule "$config" "$route_rule_tag" "rule_set" "$ruleset_tag")
         case "$type" in
         domains)
-            config=$(sing_box_cm_patch_dns_route_rule "$config" "$SB_FAKEIP_DNS_RULE_TAG" "rule_set" "$ruleset_tag")
+            [ "$route_rule_tag" = "$SB_EXCLUSION_RULE_TAG" ] || \
+                config=$(sing_box_cm_patch_dns_route_rule "$config" "$SB_FAKEIP_DNS_RULE_TAG" "rule_set" "$ruleset_tag")
             ;;
         subnets) ;;
         *) log "Unsupported remote rule set type: $type" "error" ;;
@@ -2663,11 +2666,11 @@ global_check() {
     local fakeip_address
     fakeip_address=$(dig +short @127.0.0.42 $FAKEIP_TEST_DOMAIN)
 
-    if echo "$fakeip_address" | grep -q "^198\.18\."; then
+    (is_ip_in_cidr "$fakeip_address" "$fakeip_range") && {
         print_global "✅ Sing-box works with FakeIP: $fakeip_address"
-    else
+    } || {
         print_global "❌ Sing-box does NOT work with FakeIP: $fakeip_address"
-    fi
+    }
 }
 
 show_help() {

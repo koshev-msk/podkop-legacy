@@ -1,8 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=podkop
+PKG_BASE_VERSION=0.7.20
 
-PKG_VERSION := $(if $(PODKOP_VERSION),$(PODKOP_VERSION),0.$(shell date +%d%m%Y))
+PKG_GIT_BRANCH := $(shell git -C $(dir $(firstword $(MAKEFILE_LIST))) rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+PKG_GIT_COMMIT := $(shell git -C $(dir $(firstword $(MAKEFILE_LIST))) rev-parse --short HEAD 2>/dev/null || echo unknown)
+
+PKG_VERSION := $(if $(PODKOP_VERSION),$(PODKOP_VERSION)-$(PKG_GIT_BRANCH)~$(PKG_GIT_COMMIT),$(PKG_BASE_VERSION)-$(PKG_GIT_BRANCH)~$(PKG_GIT_COMMIT))
+#PKG_VERSION := $(if $(PODKOP_VERSION),$(PODKOP_VERSION),0.$(shell date +%d%m%Y))
 
 PKG_RELEASE:=1
 

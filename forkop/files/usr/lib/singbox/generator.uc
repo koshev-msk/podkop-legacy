@@ -175,6 +175,16 @@ function runtime_settings() {
     return runtime_settings_cache;
 }
 
+function fakeip_inet4_range(settings) {
+    let range = trim(option(settings, "fakeip_range", ""));
+    return range != "" ? range : runtime_constants.FAKEIP_INET4_RANGE;
+}
+
+function fakeip_inet6_range(settings) {
+    let range = trim(option(settings, "fakeip6_range", ""));
+    return range != "" ? range : runtime_constants.FAKEIP_INET6_RANGE;
+}
+
 function settings_update_interval() {
     let settings = runtime_settings();
     if (!bool_option(settings, "list_update_enabled", true))
@@ -443,8 +453,8 @@ function base_config(settings, service_address, runtime_context) {
     push(dns_servers, {
         type: "fakeip",
         tag: runtime_constants.FAKEIP_DNS_SERVER_TAG,
-        inet4_range: runtime_constants.FAKEIP_INET4_RANGE,
-        inet6_range: runtime_constants.FAKEIP_INET6_RANGE
+        inet4_range: fakeip_inet4_range(settings),
+        inet6_range: fakeip_inet6_range(settings)
     });
 
     runtime_context = object_or_empty(runtime_context);
@@ -2494,7 +2504,7 @@ function add_source_aware_bypass_dns_rules(config, matchers, rewrite_ttl) {
         rules: [
             copy_dns_matchers(matchers),
             {
-                ip_cidr: [ runtime_constants.FAKEIP_INET4_RANGE, runtime_constants.FAKEIP_INET6_RANGE ],
+                ip_cidr: [ fakeip_inet4_range(runtime_settings()), fakeip_inet6_range(runtime_settings()) ],
                 invert: true
             }
         ],

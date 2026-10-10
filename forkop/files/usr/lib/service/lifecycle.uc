@@ -570,6 +570,16 @@ function release_start_subscription_update_lock() {
     start_subscription_update_lock_held = false;
 }
 
+function fakeip_inet4_range() {
+    let range = config_get(CONFIG_NAME + ".settings.fakeip_range", "");
+    return range != "" ? range : SB_FAKEIP_INET4_RANGE;
+}
+
+function fakeip_inet6_range() {
+    let range = config_get(CONFIG_NAME + ".settings.fakeip6_range", "");
+    return range != "" ? range : SB_FAKEIP_INET6_RANGE;
+}
+
 function nft_rebuild_runtime() {
     return module_status(NFT_UC, [
         "nft-rebuild-runtime-from-uci",
@@ -582,7 +592,7 @@ function nft_rebuild_runtime() {
         NFT_INTERFACE_SET_NAME,
         NFT_FAKEIP_MARK,
         NFT_OUTBOUND_MARK,
-        SB_FAKEIP_INET4_RANGE,
+        fakeip_inet4_range(),
         SB_TPROXY_INBOUND_PORT,
         ZAPRET_PROVIDER_NFQWS_BIN,
         ZAPRET_ROUTE_MARK_BASE,
@@ -597,7 +607,7 @@ function nft_rebuild_runtime() {
         NFT_LOCALV6_SET_NAME,
         NFT_COMMON6_SET_NAME,
         NFT_IP_PORT6_SET_NAME,
-        SB_FAKEIP_INET6_RANGE,
+        fakeip_inet6_range(),
         SB_TPROXY_INBOUND6_ADDRESS
     ]);
 }

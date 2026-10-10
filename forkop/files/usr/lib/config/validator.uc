@@ -904,6 +904,14 @@ function validate_dns_settings(settings, sections, context) {
     if (!contains([ "prefer_ipv4", "ipv4_only", "prefer_ipv6", "ipv6_only" ], dns_strategy))
         fail_validation("Unsupported DNS strategy '" + dns_strategy + "'. Use prefer_ipv4, ipv4_only, prefer_ipv6, or ipv6_only. Aborted.");
 
+    let fakeip_range = trim(option(settings, "fakeip_range", ""));
+    if (fakeip_range != "" && !core_ip.valid_ipv4_cidr(fakeip_range))
+        fail_validation("Invalid FakeIP range '" + fakeip_range + "'. Use an IPv4 CIDR subnet. Aborted.");
+
+    let fakeip6_range = trim(option(settings, "fakeip6_range", ""));
+    if (fakeip6_range != "" && !core_ip.valid_ipv6_cidr(fakeip6_range))
+        fail_validation("Invalid FakeIP IPv6 range '" + fakeip6_range + "'. Use an IPv6 CIDR subnet. Aborted.");
+
     let main_servers = dns_setting_values(settings, "dns_server");
     let bootstrap_servers = dns_setting_values(settings, "bootstrap_dns_server");
     if (length(main_servers) == 0)

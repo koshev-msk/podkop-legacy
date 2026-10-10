@@ -246,6 +246,52 @@ function createSettingsContent(section, capabilities) {
   o.rmempty = false;
 
   o = section.option(
+    form.Value,
+    "fakeip_range",
+    _("FakeIP Range"),
+    _("IPv4 subnet used for FakeIP DNS mapping (default: 198.18.0.0/15)"),
+  );
+  o.default = "198.18.0.0/15";
+  o.placeholder = "198.18.0.0/15";
+  o.rmempty = true;
+  o.validate = function (section_id, value) {
+    if (!value) {
+      return true;
+    }
+    const validation = main.validateSubnet(value);
+    if (!validation.valid) {
+      return validation.message;
+    }
+    if (!/^\d{1,3}(\.\d{1,3}){3}\/\d{1,2}$/.test(value)) {
+      return _("Use an IPv4 CIDR subnet");
+    }
+    return true;
+  };
+
+  o = section.option(
+    form.Value,
+    "fakeip6_range",
+    _("FakeIP IPv6 Range"),
+    _("IPv6 subnet used for FakeIP DNS mapping (default: fc00::/18)"),
+  );
+  o.default = "fc00::/18";
+  o.placeholder = "fc00::/18";
+  o.rmempty = true;
+  o.validate = function (section_id, value) {
+    if (!value) {
+      return true;
+    }
+    const validation = main.validateSubnet(value);
+    if (!validation.valid) {
+      return validation.message;
+    }
+    if (!value.includes(":") || !value.includes("/")) {
+      return _("Use an IPv6 CIDR subnet");
+    }
+    return true;
+  };
+
+  o = section.option(
     form.Flag,
     "dns_detour_enabled",
     _("DNS through proxy"),

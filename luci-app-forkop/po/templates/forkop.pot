@@ -1043,6 +1043,14 @@ msgstr ""
 msgid "FakeIP and control checks use the same public IP"
 msgstr ""
 
+#: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:274
+msgid "FakeIP IPv6 Range"
+msgstr ""
+
+#: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:251
+msgid "FakeIP Range"
+msgstr ""
+
 #: src/forkop/tabs/diagnostic/checks/runFakeIPCheck.ts:46
 msgid "FakeIP works; public IP comparison is inconclusive"
 msgstr ""
@@ -1614,8 +1622,16 @@ msgstr ""
 msgid "IPv4 only"
 msgstr ""
 
+#: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:252
+msgid "IPv4 subnet used for FakeIP DNS mapping (default: 198.18.0.0/15)"
+msgstr ""
+
 #: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:244
 msgid "IPv6 only"
+msgstr ""
+
+#: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:275
+msgid "IPv6 subnet used for FakeIP DNS mapping (default: fc00::/18)"
 msgstr ""
 
 #: src/forkop/tabs/diagnostic/checks/getCheckItemsMeta.ts:17
@@ -3111,6 +3127,14 @@ msgstr ""
 
 #: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/server.js:1910
 msgid "Use an IP listen address"
+msgstr ""
+
+#: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:266
+msgid "Use an IPv4 CIDR subnet"
+msgstr ""
+
+#: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/settings.js:289
+msgid "Use an IPv6 CIDR subnet"
 msgstr ""
 
 #: ../luci-app-forkop/htdocs/luci-static/resources/view/forkop/section.js:7492

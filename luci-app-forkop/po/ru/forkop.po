@@ -710,6 +710,12 @@ msgstr "FakeIP и контрольная проверка используют �
 msgid "FakeIP and control checks use the same public IP"
 msgstr "FakeIP и контрольная проверка используют один публичный IP"
 
+msgid "FakeIP IPv6 Range"
+msgstr "Подсеть FakeIP IPv6"
+
+msgid "FakeIP Range"
+msgstr "Подсеть FakeIP"
+
 msgid "FakeIP works; public IP comparison is inconclusive"
 msgstr "FakeIP работает; сравнение публичных IP не дает однозначного результата"
 
@@ -1118,8 +1124,14 @@ msgstr "IP-адреса"
 msgid "IPv4 only"
 msgstr "Только IPv4"
 
+msgid "IPv4 subnet used for FakeIP DNS mapping (default: 198.18.0.0/15)"
+msgstr "IPv4 подсеть для FakeIP сопоставления DNS (по умолчанию: 198.18.0.0/15)"
+
 msgid "IPv6 only"
 msgstr "Только IPv6"
+
+msgid "IPv6 subnet used for FakeIP DNS mapping (default: fc00::/18)"
+msgstr "IPv6 подсеть для FakeIP сопоставления DNS (по умолчанию: fc00::/18)"
 
 msgid "Issues detected"
 msgstr "Обнаружены проблемы"
@@ -2152,6 +2164,12 @@ msgstr "Используйте IP-адрес"
 
 msgid "Use an IP listen address"
 msgstr "Используйте IP-адрес для прослушивания"
+
+msgid "Use an IPv4 CIDR subnet"
+msgstr "Используйте IPv4 подсеть в формате CIDR"
+
+msgid "Use an IPv6 CIDR subnet"
+msgstr "Используйте IPv6 подсеть в формате CIDR"
 
 msgid "Use another section as an intermediate hop to connect to servers in this section. Does not apply to network interfaces or JSON outbounds."
 msgstr "Использовать другую секцию как промежуточный узел подключения к серверам этой секции. Не применяется к сетевым интерфейсам и JSON outbound."

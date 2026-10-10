@@ -661,6 +661,12 @@ function mwan3_has_enabled_interface() {
     return mwan3_has_enabled_interface_text(read_stdin());
 }
 
+function uci_core() {
+    if (uci_core_module == null)
+        uci_core_module = require("core.uci");
+    return uci_core_module;
+}
+
 function mwan3_has_enabled_interface_from_sections() {
     for (let section in uci_core().section_objects("mwan3", "interface"))
         if (option(section, "enabled", "0") == "1")
@@ -735,12 +741,6 @@ function runtime_constants() {
     if (constants_module == null)
         constants_module = require("core.constants");
     return constants_module;
-}
-
-function uci_core() {
-    if (uci_core_module == null)
-        uci_core_module = require("core.uci");
-    return uci_core_module;
 }
 
 function fixture_section_list(type_name) {

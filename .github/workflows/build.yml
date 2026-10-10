@@ -3,110 +3,104 @@ on:
   push:
     tags:
       - '*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to build and publish
+        required: true
+        type: string
+      release_notes:
+        description: 'Optional release notes/comment (use \n for line breaks; Markdown is preserved)'
+        required: false
+        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   preparation:
     name: Setup build version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+      commitish: ${{ steps.version.outputs.commitish }}
+      release_notes: ${{ steps.version.outputs.release_notes }}
     steps:
       - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
       - id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.release_tag || '' }}
+          INPUT_RELEASE_NOTES: ${{ inputs.release_notes || '' }}
         run: |
-          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "0.$(date +%d%m%Y)")
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION=$(git describe --tags --exact-match 2>/dev/null || true)
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release version must use x.y.z format, got: ${VERSION:-<empty>}" >&2
+            exit 1
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "commitish=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import os
+          import uuid
+
+          notes = os.environ['INPUT_RELEASE_NOTES']
+          notes = notes.replace('\r\n', '\n').replace('\r', '\n').replace('\\n', '\n')
+          delimiter = f'ghadelimiter_{uuid.uuid4().hex}'
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'release_notes<<{delimiter}\n{notes}\n{delimiter}\n')
+          PY
 
   build:
-    name: Builder for ${{ matrix.package_type }} podkop and luci-app-podkop
-    runs-on: ubuntu-latest
+    name: Build Forkop release packages
+    runs-on: ubuntu-24.04
     needs: preparation
-    strategy:
-      matrix:
-        include:
-          - { package_type: ipk }
-          - { package_type: apk }
     steps:
       - uses: actions/checkout@v5.0.0
-        with:
-          fetch-depth: 0
 
-      - name: Build ${{ matrix.package_type }}
-        uses: docker/build-push-action@v6.18.0
-        with:
-          file: ./Dockerfile-${{ matrix.package_type }}
-          context: .
-          tags: podkop:ci-${{ matrix.package_type }}
-          build-args: |
-            PODKOP_VERSION=${{ needs.preparation.outputs.version }}
-
-      - name: Create ${{ matrix.package_type }} Docker container
-        run: docker create --name ${{ matrix.package_type }} podkop:ci-${{ matrix.package_type }}
-
-      - name: Copy files from ${{ matrix.package_type }} Docker container
+      - name: Install build dependencies
         run: |
-          mkdir -p ./bin/${{ matrix.package_type }}
-          docker cp ${{ matrix.package_type }}:/builder/bin/packages/x86_64/utilities/. ./bin/${{ matrix.package_type }}/
-          docker cp ${{ matrix.package_type }}:/builder/bin/packages/x86_64/luci/. ./bin/${{ matrix.package_type }}/
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl fakeroot file gawk git patch perl tar unzip util-linux xz-utils zstd
 
-        # IPK uses underscore `_` in filenames, while APK uses only dash `-`
-      - name: Fix naming difference between build for packages (replace _ with -)
-        if: matrix.package_type == 'ipk'
+      - name: Build release artifacts
         shell: bash
         run: |
-          for f in ./bin/${{ matrix.package_type }}/*.${{ matrix.package_type }}; do
-            [ -e "$f" ] || continue
-            base=$(basename "$f")
-            newname=$(echo "$base" | sed 's/_/-/g')
-            mv "$f" "./bin/${{ matrix.package_type }}/$newname"
-          done
-
-      - name: Filter files
-        shell: bash
-        run: |
-          # Use version from preparation job (already without 'v' prefix)
           VERSION="${{ needs.preparation.outputs.version }}"
-
-          mkdir -p ./filtered-bin/${{ matrix.package_type }}
-          cp ./bin/${{ matrix.package_type }}/luci-i18n-podkop-ru-*.${{ matrix.package_type }} "./filtered-bin/${{ matrix.package_type }}/luci-i18n-podkop-ru-${VERSION}.${{ matrix.package_type }}"
-          cp ./bin/${{ matrix.package_type }}/podkop-*.${{ matrix.package_type }} ./filtered-bin/${{ matrix.package_type }}/
-          cp ./bin/${{ matrix.package_type }}/luci-app-podkop-*.${{ matrix.package_type }} ./filtered-bin/${{ matrix.package_type }}/
-
-      - name: Remove Docker container
-        run: docker rm ${{ matrix.package_type }}
+          ./build.sh "$VERSION" "$PWD/filtered-bin/release"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: release-files-${{ github.ref_name }}-${{ matrix.package_type }}
-          path: ./filtered-bin/${{ matrix.package_type }}/*.${{ matrix.package_type }}
+          name: release-files-${{ needs.preparation.outputs.version }}
+          path: ./filtered-bin/release/*
           retention-days: 1
           if-no-files-found: error
 
   release:
     name: Create Release
-    runs-on: ubuntu-latest
-    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs:
+      - preparation
+      - build
     steps:
       - uses: actions/checkout@v5.0.0
       - name: Create release dir
         run: mkdir -p ./filtered-bin/release
 
-      - name: Download ipk artifacts
+      - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
-          name: release-files-${{ github.ref_name }}-ipk
-          path: ./filtered-bin/release
-
-      - name: Download apk artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: release-files-${{ github.ref_name }}-apk
+          name: release-files-${{ needs.preparation.outputs.version }}
           path: ./filtered-bin/release
 
       - name: Release
@@ -115,5 +109,8 @@ jobs:
           files: ./filtered-bin/release/*.*
           draft: false
           prerelease: false
-          name: ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
+          make_latest: true
+          name: ${{ needs.preparation.outputs.version }}
+          tag_name: ${{ needs.preparation.outputs.version }}
+          target_commitish: ${{ needs.preparation.outputs.commitish }}
+          body: ${{ needs.preparation.outputs.release_notes }}

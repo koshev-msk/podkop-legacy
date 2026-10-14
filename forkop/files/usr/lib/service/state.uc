@@ -1265,6 +1265,7 @@ function append_sing_box_rule_signature_body(body, section, sections) {
         body = signature_add_outbound_detour_body(body, section, prefix);
         body = signature_add_mixed_proxy_body(body, section, prefix);
         body = signature_add_value(body, prefix + ".resolve_real_ip_for_routing", bool_option_value(section, "resolve_real_ip_for_routing", false));
+        body = signature_add_value(body, prefix + ".default_route", bool_option_value(section, "default_route", false));
     }
     else if (action == "byedpi") {
         body = signature_add_value(body, prefix + ".byedpi_index", sing_box_signature_enabled_action_index(sections, name, "byedpi"));

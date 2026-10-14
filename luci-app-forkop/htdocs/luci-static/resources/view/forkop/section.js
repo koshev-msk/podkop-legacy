@@ -7671,6 +7671,20 @@ function createSectionContent(section) {
     return getRuleResolvedAction(section_id) === "byedpi" ? "1" : "0";
   };
 
+  o = section.taboption(
+    "settings",
+    form.Flag,
+    "default_route",
+    _("Use as default route"),
+    _(
+      "Send all traffic not matched by other sections through this section. If several sections enable this, the last one wins.",
+    ),
+  );
+  o.default = "0";
+  o.rmempty = false;
+  o.depends("action", "connection");
+  o.modalonly = true;
+
   addTextConditionField(section, {
     key: "domain_suffix",
     optionName: "domain",

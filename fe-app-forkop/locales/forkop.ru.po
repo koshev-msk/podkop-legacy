@@ -1706,6 +1706,9 @@ msgstr "Выбранная секция"
 msgid "Selector and URLTest outbounds must contain a non-empty outbounds array"
 msgstr "Selector и URLTest outbound должны содержать непустой массив outbounds"
 
+msgid "Send all traffic not matched by other sections through this section. If several sections enable this, the last one wins."
+msgstr "Направлять через эту секцию весь трафик, не попавший в другие секции. Если опция включена в нескольких секциях, действует последняя."
+
 msgid "Server"
 msgstr "Сервер"
 
@@ -2173,6 +2176,9 @@ msgstr "Используйте IPv6 подсеть в формате CIDR"
 
 msgid "Use another section as an intermediate hop to connect to servers in this section. Does not apply to network interfaces or JSON outbounds."
 msgstr "Использовать другую секцию как промежуточный узел подключения к серверам этой секции. Не применяется к сетевым интерфейсам и JSON outbound."
+
+msgid "Use as default route"
+msgstr "Использовать как маршрут по умолчанию"
 
 msgid "Use CIDR prefixes like 192.168.1.0/24 or 2001:db8::/32"
 msgstr "Используйте CIDR-префиксы, например 192.168.1.0/24 или 2001:db8::/32"

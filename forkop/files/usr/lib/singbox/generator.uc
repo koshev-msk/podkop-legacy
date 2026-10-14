@@ -2792,6 +2792,9 @@ function add_combined_route_for_section(config, section) {
     let target = runtime_route.target(section, outbound_tag(section_name));
     if (target.unsupported)
         runtime_generate_unsupported(target.unsupported);
+    if (connections.is_connections_action(option(section, "action", "")) &&
+        bool_option(section, "default_route", false))
+        config.route.final = target.outbound;
     let route_rule = {
         action: target.action,
         inbound: tproxy_inbound_matcher()

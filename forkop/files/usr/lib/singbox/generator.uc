@@ -2813,11 +2813,36 @@ function add_combined_route_for_section(config, section) {
     if (length(rule_set_tags) > 0)
         route_rule.rule_set = single_or_array(rule_set_tags);
 
-    let has_route_matchers = route_rule.domain != null || route_rule.domain_suffix != null ||
-        route_rule.domain_keyword != null || route_rule.domain_regex != null ||
-        route_rule.ip_cidr != null || route_rule.port != null || route_rule.port_range != null ||
-        route_rule.rule_set != null;
-    if (has_route_matchers) {
+    let has_domain_matchers = route_rule.domain != null || route_rule.domain_suffix != null ||
+        route_rule.domain_keyword != null || route_rule.domain_regex != null;
+    let has_route_matchers = has_domain_matchers || route_rule.ip_cidr != null ||
+        route_rule.port != null || route_rule.port_range != null || route_rule.rule_set != null;
+
+    if (has_domain_matchers && route_rule.rule_set != null) {
+        // Domain matchers and rule_set are alternatives (OR).
+        // Preserve other matchers as additional constraints.
+        let domain_rule = {};
+        let rule_set_rule = {};
+
+        for (let key, value in route_rule) {
+            if (key != "rule_set")
+                domain_rule[key] = value;
+
+            if (key != "domain" && key != "domain_suffix" &&
+                key != "domain_keyword" && key != "domain_regex")
+                rule_set_rule[key] = value;
+        }
+
+        for (let rule in [ domain_rule, rule_set_rule ]) {
+            let resolve = runtime_route.resolve_rule_for_section(section, rule);
+            if (type(resolve) == "object" && resolve.warning)
+                warn(resolve.warning, "\n");
+            else if (type(resolve) == "object" && resolve.rule)
+                push(config.route.rules, resolve.rule);
+            push(config.route.rules, rule);
+        }
+    }
+    else if (has_route_matchers) {
         let resolve = runtime_route.resolve_rule_for_section(section, route_rule);
         if (type(resolve) == "object" && resolve.warning)
             warn(resolve.warning, "\n");

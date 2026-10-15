@@ -8,6 +8,7 @@ usage() {
 Usage: $(basename "$0") <version> [output-directory]
 
 Build Forkop IPK and APK packages. The version must use x.y.z format.
+The package version is <version>_git~<commit> (BUILD_COMMIT overrides the commit).
 EOF
 }
 
@@ -28,7 +29,9 @@ if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "Expected release version in the form x.y.z" >&2
   exit 2
 fi
-APK_INTERNAL_VERSION="$RELEASE_VERSION"
+BUILD_COMMIT="${BUILD_COMMIT:-$(git -C "$ROOT_DIR" rev-parse --short=8 HEAD 2>/dev/null || echo unknown)}"
+PACKAGE_VERSION="${RELEASE_VERSION}_git~${BUILD_COMMIT}"
+APK_INTERNAL_VERSION="$PACKAGE_VERSION"
 
 BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/.build}"
 SDK_CACHE_DIR="${SDK_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/forkop/openwrt-sdk}"
@@ -174,7 +177,7 @@ build_backend_root() {
   install -m 0755 "$ROOT_DIR/forkop/files/usr/bin/forkop" "$output_root/usr/bin/forkop"
   cp -a "$ROOT_DIR/forkop/files/usr/lib/." "$output_root/usr/lib/forkop/"
 
-  sed -i -e "s/__COMPILED_VERSION_VARIABLE__/${RELEASE_VERSION}/g" \
+  sed -i -e "s/__COMPILED_VERSION_VARIABLE__/${PACKAGE_VERSION}/g" \
     "$output_root/usr/lib/forkop/core/constants.uc"
 
   normalize_package_root_modes "$output_root"
@@ -189,7 +192,7 @@ build_app_root() {
 
   cp -a "$ROOT_DIR/luci-app-forkop/htdocs/." "$output_root/www/"
   cp -a "$ROOT_DIR/luci-app-forkop/root/." "$output_root/"
-  sed -i -e "s/__COMPILED_VERSION_VARIABLE__/${RELEASE_VERSION}/g" \
+  sed -i -e "s/__COMPILED_VERSION_VARIABLE__/${PACKAGE_VERSION}/g" \
     "$output_root/www/luci-static/resources/view/forkop/main.js"
 
   normalize_package_root_modes "$output_root"
@@ -251,7 +254,7 @@ write_backend_ipk_control() {
 
   cat > "$control_dir/control" <<EOF
 Package: forkop
-Version: ${RELEASE_VERSION}
+Version: ${PACKAGE_VERSION}
 Depends: ${BACKEND_DEPENDS_IPK}
 Conflicts: ${BACKEND_CONFLICTS_IPK}
 License: GPL-2.0-or-later
@@ -295,7 +298,7 @@ write_app_ipk_control() {
 
   cat > "$control_dir/control" <<EOF
 Package: luci-app-forkop
-Version: ${RELEASE_VERSION}
+Version: ${PACKAGE_VERSION}
 Depends: ${APP_DEPENDS_IPK}
 License: GPL-2.0-or-later
 Section: luci
@@ -333,7 +336,7 @@ write_i18n_ipk_control() {
 
   cat > "$control_dir/control" <<EOF
 Package: luci-i18n-forkop-ru
-Version: ${RELEASE_VERSION}
+Version: ${PACKAGE_VERSION}
 Depends: libc, luci-app-forkop
 License: GPL-2.0-or-later
 Section: luci
@@ -384,7 +387,7 @@ build_ipk_package() {
     exec "$2" "$1" "$3"
   ' sh "$package_root" "$ipkg_build_bin" "$build_dir" >/dev/null
 
-  built_file="$build_dir/${package_name}_${RELEASE_VERSION}_all.ipk"
+  built_file="$build_dir/${package_name}_${PACKAGE_VERSION}_all.ipk"
   [ -f "$built_file" ] || {
     echo "Expected IPK artifact not found: $built_file" >&2
     exit 1
@@ -690,21 +693,21 @@ main() {
     "forkop" \
     "$backend_root" \
     "$backend_control" \
-    "$output_dir/forkop_${RELEASE_VERSION}.ipk"
+    "$output_dir/forkop_${PACKAGE_VERSION}.ipk"
 
   build_ipk_package \
     "$ipkg_build_bin" \
     "luci-app-forkop" \
     "$app_root" \
     "$app_control" \
-    "$output_dir/luci-app-forkop_${RELEASE_VERSION}.ipk"
+    "$output_dir/luci-app-forkop_${PACKAGE_VERSION}.ipk"
 
   build_ipk_package \
     "$ipkg_build_bin" \
     "luci-i18n-forkop-ru" \
     "$i18n_root" \
     "$i18n_control" \
-    "$output_dir/luci-i18n-forkop-ru_${RELEASE_VERSION}.ipk"
+    "$output_dir/luci-i18n-forkop-ru_${PACKAGE_VERSION}.ipk"
 
   generate_apk_metadata_files "forkop" "$backend_root" "/etc/config/forkop"
   generate_apk_metadata_files "luci-app-forkop" "$app_root"
@@ -722,7 +725,7 @@ main() {
     "$backend_root" \
     "$apk_scripts" \
     "backend" \
-    "$output_dir/forkop_${RELEASE_VERSION}.apk" \
+    "$output_dir/forkop-${PACKAGE_VERSION}.apk" \
     "$MAINTAINER"
 
   build_apk_package \
@@ -734,7 +737,7 @@ main() {
     "$app_root" \
     "$apk_scripts" \
     "app" \
-    "$output_dir/luci-app-forkop_${RELEASE_VERSION}.apk" \
+    "$output_dir/luci-app-forkop-${PACKAGE_VERSION}.apk" \
     "$MAINTAINER"
 
   build_apk_package \
@@ -746,15 +749,15 @@ main() {
     "$i18n_root" \
     "$apk_scripts" \
     "i18n" \
-    "$output_dir/luci-i18n-forkop-ru_${RELEASE_VERSION}.apk" \
+    "$output_dir/luci-i18n-forkop-ru-${PACKAGE_VERSION}.apk" \
     "$MAINTAINER"
 
-  verify_ipk_metadata "$output_dir/forkop_${RELEASE_VERSION}.ipk" "forkop" "$RELEASE_VERSION"
-  verify_ipk_metadata "$output_dir/luci-app-forkop_${RELEASE_VERSION}.ipk" "luci-app-forkop" "$RELEASE_VERSION"
-  verify_ipk_metadata "$output_dir/luci-i18n-forkop-ru_${RELEASE_VERSION}.ipk" "luci-i18n-forkop-ru" "$RELEASE_VERSION"
-  verify_apk_metadata "$apk_bin" "$output_dir/forkop_${RELEASE_VERSION}.apk" "forkop" "$APK_INTERNAL_VERSION"
-  verify_apk_metadata "$apk_bin" "$output_dir/luci-app-forkop_${RELEASE_VERSION}.apk" "luci-app-forkop" "$APK_INTERNAL_VERSION"
-  verify_apk_metadata "$apk_bin" "$output_dir/luci-i18n-forkop-ru_${RELEASE_VERSION}.apk" "luci-i18n-forkop-ru" "$APK_INTERNAL_VERSION"
+  verify_ipk_metadata "$output_dir/forkop_${PACKAGE_VERSION}.ipk" "forkop" "$PACKAGE_VERSION"
+  verify_ipk_metadata "$output_dir/luci-app-forkop_${PACKAGE_VERSION}.ipk" "luci-app-forkop" "$PACKAGE_VERSION"
+  verify_ipk_metadata "$output_dir/luci-i18n-forkop-ru_${PACKAGE_VERSION}.ipk" "luci-i18n-forkop-ru" "$PACKAGE_VERSION"
+  verify_apk_metadata "$apk_bin" "$output_dir/forkop-${PACKAGE_VERSION}.apk" "forkop" "$APK_INTERNAL_VERSION"
+  verify_apk_metadata "$apk_bin" "$output_dir/luci-app-forkop-${PACKAGE_VERSION}.apk" "luci-app-forkop" "$APK_INTERNAL_VERSION"
+  verify_apk_metadata "$apk_bin" "$output_dir/luci-i18n-forkop-ru-${PACKAGE_VERSION}.apk" "luci-i18n-forkop-ru" "$APK_INTERNAL_VERSION"
 
   cleanup_work_dir
   print_summary "$output_dir"

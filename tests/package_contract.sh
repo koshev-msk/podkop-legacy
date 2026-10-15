@@ -92,8 +92,10 @@ fi
 
 grep -Fq "must use x.y.z format" "$FORKOP_MAKEFILE" ||
   fail "forkop/Makefile must enforce the three-part release version contract"
-grep -Fq 'APK_INTERNAL_VERSION="$RELEASE_VERSION"' "$BUILD_SCRIPT" ||
-  fail "build.sh must use the exact three-part release version for APK metadata"
+grep -Fq 'PACKAGE_VERSION="${RELEASE_VERSION}_git~${BUILD_COMMIT}"' "$BUILD_SCRIPT" ||
+  fail "build.sh must build the package version as <version>_git~<commit>"
+grep -Fq 'APK_INTERNAL_VERSION="$PACKAGE_VERSION"' "$BUILD_SCRIPT" ||
+  fail "build.sh must use the package version for APK metadata"
 grep -Fq "option component_update_check_enabled '1'" "$FORKOP_CONFIG" ||
   fail "new installations must enable component update checks by default"
 grep -Fq "option config_version '1.0.5'" "$FORKOP_CONFIG" ||

@@ -1528,4 +1528,41 @@ assert(length(test_metadata) == 1, "same subscription URL metadata kept for seco
 assert(test_metadata[0].sourceSection == "test-subscription-1" && test_metadata[0].title == "WolfPN", "test source metadata marker");
 ' "$WORK_DIR"
 
+printf '{"version":3,"rules":[{"domain_suffix":["example.com"]}]}' >"$WORK_DIR/present-ruleset.json"
+cat >"$WORK_DIR/missing-ruleset-fixture.json" <<JSON
+{
+  "settings": {
+    ".name": "settings",
+    ".type": "settings",
+    "config_path": "/tmp/sing-box/config.json",
+    "dns_server": "1.1.1.1",
+    "service_listen_address": "127.0.0.1"
+  },
+  "section": [
+    {
+      ".name": "proxy",
+      ".type": "section",
+      "enabled": "1",
+      "action": "outbound",
+      "outbound_json": "{\\"type\\":\\"direct\\"}",
+      "rule_set": [ "$WORK_DIR/missing-ruleset.srs", "$WORK_DIR/present-ruleset.json", "$WORK_DIR/missing-ruleset.srs" ]
+    }
+  ]
+}
+JSON
+generate_config "$WORK_DIR/missing-ruleset-fixture.json" "$WORK_DIR/missing-ruleset-config.json" \
+  2>"$WORK_DIR/missing-ruleset.stderr" ||
+  fail "a missing local rule_set file must not fail config generation"
+grep -Fq "local rule_set file not found, skipping: $WORK_DIR/missing-ruleset.srs" "$WORK_DIR/missing-ruleset.stderr" ||
+  fail "a missing local rule_set file must be reported as a warning"
+[ "$(grep -c 'local rule_set file not found' "$WORK_DIR/missing-ruleset.stderr")" = "1" ] ||
+  fail "a missing local rule_set file must be reported once"
+node - "$WORK_DIR/missing-ruleset-config.json" "$WORK_DIR/present-ruleset.json" "$WORK_DIR/missing-ruleset.srs" <<'JS'
+const fs = require('fs');
+const config = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const paths = (config.route.rule_set || []).filter((r) => r.type === 'local').map((r) => r.path);
+if (!paths.includes(process.argv[3])) throw new Error('existing local rule_set must stay in the config');
+if (paths.includes(process.argv[4])) throw new Error('missing local rule_set must be skipped');
+JS
+
 printf 'sing-box runtime checks passed\n'

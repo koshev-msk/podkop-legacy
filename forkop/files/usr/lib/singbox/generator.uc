@@ -333,6 +333,29 @@ function ruleset_registered(config, tag_name) {
     return false;
 }
 
+let missing_local_rulesets = {};
+
+function local_ruleset_available(reference) {
+    reference = as_string(reference);
+    if (substr(reference, 0, 1) != "/")
+        return true;
+    if (fs.stat(reference)?.type == "file" && fs.access(reference, "r"))
+        return true;
+    if (!missing_local_rulesets[reference]) {
+        missing_local_rulesets[reference] = true;
+        warn("local rule_set file not found, skipping: ", reference, "\n");
+    }
+    return false;
+}
+
+function available_rule_sets(references) {
+    let result = [];
+    for (let reference in references)
+        if (local_ruleset_available(reference))
+            push(result, reference);
+    return result;
+}
+
 function ensure_custom_ruleset(config, reference) {
     let tag_name;
     let kind = runtime_rulesets.kind_from_reference_hint(reference);
@@ -2625,7 +2648,7 @@ function add_dns_action_rules_for_section(config, section) {
         let ensured = ensure_community_ruleset(config, section_name, as_string(community));
         push(rule_set_tags, ensured.tag);
     }
-    for (let reference in connections.rule_sets(section)) {
+    for (let reference in available_rule_sets(connections.rule_sets(section))) {
         let ensured = ensure_custom_ruleset(config, as_string(reference));
         if (ensured.kind == "domains")
             push(rule_set_tags, ensured.tag);
@@ -2768,13 +2791,13 @@ function add_combined_route_for_section(config, section) {
         push(rule_set_tags, ensured.tag);
         push(dns_rule_set_tags, ensured.tag);
     }
-    for (let reference in connections.rule_sets(section)) {
+    for (let reference in available_rule_sets(connections.rule_sets(section))) {
         let ensured = ensure_custom_ruleset(config, as_string(reference));
         push(rule_set_tags, ensured.tag);
         if (ensured.kind == "domains")
             push(dns_rule_set_tags, ensured.tag);
     }
-    for (let reference in connections.rule_sets_with_subnets(section)) {
+    for (let reference in available_rule_sets(connections.rule_sets_with_subnets(section))) {
         let ensured = ensure_custom_ruleset(config, as_string(reference));
         push(rule_set_tags, ensured.tag);
         if (ensured.kind == "domains")

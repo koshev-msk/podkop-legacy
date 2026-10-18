@@ -2166,8 +2166,8 @@ function import_builtin_subnets_from_rule(section, settings) {
 
 function import_custom_ruleset_subnets_from_local(path, format, section, label) {
     if (!file_exists_value(path)) {
-        log_message("Local rule set file " + as_string(path) + " not found", "error");
-        return false;
+        log_message("Local rule set file " + as_string(path) + " not found; skipping it", "warn");
+        return true;
     }
 
     let json_tmpfile = temp_path();

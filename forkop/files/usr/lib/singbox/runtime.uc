@@ -653,12 +653,21 @@ function log_file_lines(path, level, prefix) {
     log_lines(fs.readfile(path), level, prefix);
 }
 
+function sing_box_check_reason(path) {
+    for (let line in split(as_string(fs.readfile(path) || ""), "\n")) {
+        line = trim(as_string(line));
+        if (match(line, /^(FATAL|ERROR)/) != null)
+            return line;
+    }
+    return last_nonblank_line(path);
+}
+
 function sing_box_check(config_path, output_path) {
     let status = command_status(
         command_from_args([ "sing-box", "-c", config_path, "check" ]) +
         " >" + shell_quote(output_path) + " 2>&1"
     );
-    let reason = status == 0 ? "" : first_nonblank_line(output_path);
+    let reason = status == 0 ? "" : sing_box_check_reason(output_path);
     if (status != 0 && reason == "")
         reason = "exit status " + status;
     return { status, reason };

@@ -114,6 +114,20 @@ fi
 grep -Fq 'Generated sing-box configuration is invalid: " + check_result.reason' "$SINGBOX_RUNTIME_UC" ||
   fail "generated config failure must include the captured sing-box check diagnostic"
 
+cat >"$WORK_DIR/check-bin/sing-box" <<'EOF_SING_BOX_CHECK_WARN'
+#!/bin/sh
+printf '%s\n' 'WARN[0000] `independent_cache` DNS option is deprecated in sing-box 1.14.0' >&2
+printf '%s\n' 'FATAL[0000] decode config at /tmp/x.json: open /tmp/missing.srs: no such file or directory' >&2
+exit 1
+EOF_SING_BOX_CHECK_WARN
+chmod +x "$WORK_DIR/check-bin/sing-box"
+PATH="$WORK_DIR/check-bin:$PATH" \
+  ucode -L "$FORKOP_LIB" "$SINGBOX_RUNTIME_UC" check-config-fixture \
+  "$WORK_DIR/invalid-config.json" "$WORK_DIR/sing-box-check.log" \
+  >"$WORK_DIR/sing-box-check.reason" || true
+[ "$(cat "$WORK_DIR/sing-box-check.reason")" = 'FATAL[0000] decode config at /tmp/x.json: open /tmp/missing.srs: no such file or directory' ] ||
+  fail "singbox/runtime.uc must report the FATAL diagnostic instead of an earlier deprecation warning"
+
 cat >"$WORK_DIR/generator-failure.log" <<'EOF_GENERATOR_FAILURE'
 skipped incompatible subscription outbound for rule 'only_xhttp': Only XHTTP node (XHTTP requires sing-box-extended)
 connection section has no usable outbounds

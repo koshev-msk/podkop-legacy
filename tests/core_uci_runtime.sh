@@ -152,4 +152,36 @@ UCODE
 ucode -L "$UCODE_LIB" -L "$WORK_DIR" "$WORK_DIR/check.uc" ||
   fail "core.uci anonymous selector runtime regression"
 
+uci_ensure_package() {
+  env "$@" ucode -L "$UCODE_LIB" -e 'let u = require("core.uci"); print(u.ensure_package("sing-box") ? "ok" : "failed")'
+}
+
+mkdir -p "$WORK_DIR/uci-config"
+[ "$(uci_ensure_package FORKOP_UCI_CONFIG_DIR="$WORK_DIR/uci-config")" = ok ] ||
+  fail "ensure_package must succeed when the config file is missing"
+[ -f "$WORK_DIR/uci-config/sing-box" ] && [ ! -s "$WORK_DIR/uci-config/sing-box" ] ||
+  fail "ensure_package must create an empty config file for a package without one"
+
+printf "config sing-box 'main'\n\toption enabled '1'\n" >"$WORK_DIR/uci-config/sing-box"
+[ "$(uci_ensure_package FORKOP_UCI_CONFIG_DIR="$WORK_DIR/uci-config")" = ok ] ||
+  fail "ensure_package must succeed when the config file exists"
+grep -Fq "option enabled '1'" "$WORK_DIR/uci-config/sing-box" ||
+  fail "ensure_package must not touch an existing config file"
+
+[ "$(uci_ensure_package FORKOP_UCI_CONFIG_DIR="$WORK_DIR/uci-config/missing-dir")" = failed ] ||
+  fail "ensure_package must fail when the config file cannot be created"
+
+rm -f "$WORK_DIR/uci-config/sing-box"
+[ "$(uci_ensure_package FORKOP_UCI_CONFIG_DIR="$WORK_DIR/uci-config" FORKOP_UCI_STATE_FILE=/dev/null)" = ok ] ||
+  fail "ensure_package must succeed in fixture mode"
+[ ! -e "$WORK_DIR/uci-config/sing-box" ] ||
+  fail "ensure_package must not create files in fixture mode"
+
+grep -Fq 'uci_core.ensure_package("sing-box")' "$UCODE_LIB/singbox/runtime.uc" ||
+  fail "singbox/runtime.uc must create the sing-box config file before adding the main section"
+grep -Fq 'uci_core.ensure_package("sing-box")' "$UCODE_LIB/components/action.uc" ||
+  fail "components/action.uc must create the sing-box config file before adding the main section"
+grep -Fq 'Failed to create the sing-box service section' "$UCODE_LIB/singbox/runtime.uc" ||
+  fail "singbox/runtime.uc must report a failed sing-box service section instead of exiting silently"
+
 printf 'core UCI runtime checks passed\n'

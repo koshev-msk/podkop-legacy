@@ -366,7 +366,17 @@ function uci_get_option(config, section, key) {
 function ensure_sing_box_main_section() {
     if (uci_core.exists("sing-box.main"))
         return true;
+    if (!uci_core.ensure_package("sing-box"))
+        return false;
     return uci_core.set_section("sing-box.main", "sing-box");
+}
+
+function ensure_sing_box_workdir() {
+    let workdir = uci_get_option("sing-box", "main", "workdir");
+    if (workdir == "")
+        workdir = "/usr/share/sing-box";
+    if (!ensure_dir(workdir))
+        log_message("Failed to create sing-box working directory " + workdir, "warn");
 }
 
 function uci_set_option(config, section, key, value) {
@@ -465,8 +475,11 @@ function configure_service() {
         exit(1);
     }
 
-    if (!ensure_sing_box_main_section())
+    if (!ensure_sing_box_main_section()) {
+        log_message("Failed to create the sing-box service section in /etc/config/sing-box. Aborted.", "fatal");
         exit(1);
+    }
+    ensure_sing_box_workdir();
 
     let changed = false;
     if (uci_get_option("sing-box", "main", "enabled") != "1") {

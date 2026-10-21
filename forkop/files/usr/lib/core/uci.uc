@@ -7,6 +7,7 @@ let as_string = common.as_string;
 
 const UCI_STATE_FILE = getenv("FORKOP_UCI_STATE_FILE") || getenv("UCI_STATE") || "";
 const UCI_LOG_FILE = getenv("FORKOP_UCI_LOG_FILE") || getenv("UCI_LOG") || "";
+const UCI_CONFIG_DIR = getenv("FORKOP_UCI_CONFIG_DIR") || "/etc/config";
 
 let runtime_cursor = false;
 let loaded_packages = {};
@@ -277,6 +278,19 @@ function cursor() {
 
 function available() {
     return fixture_enabled() || cursor() != null;
+}
+
+// `uci load` fails for a package without a config file, so a service that
+// was installed without one (e.g. a bare binary) needs an empty file first.
+function ensure_package(package_name) {
+    package_name = as_string(package_name);
+    if (fixture_enabled())
+        return true;
+
+    let path = UCI_CONFIG_DIR + "/" + package_name;
+    if (fs.stat(path) != null)
+        return true;
+    return fs.writefile(path, "") != null;
 }
 
 function load(package_name) {
@@ -609,6 +623,7 @@ function section_objects(package_name, type_name) {
 
 return {
     available,
+    ensure_package,
     load,
     get,
     get_all,

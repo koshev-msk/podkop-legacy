@@ -689,7 +689,8 @@ function remove_managed_sing_box_service_script() {
 function disable_sing_box_service_config() {
     if (!uci_core.available())
         return true;
-    if (!uci_core.exists("sing-box.main") && !uci_core.set_section("sing-box.main", "sing-box"))
+    if (!uci_core.exists("sing-box.main") &&
+        !(uci_core.ensure_package("sing-box") && uci_core.set_section("sing-box.main", "sing-box")))
         return false;
     if (!uci_core.set("sing-box.main.enabled", "0"))
         return false;
